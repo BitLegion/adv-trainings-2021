@@ -58,9 +58,9 @@ std::array<unsigned char, 4> encode_output(const Output &raw) {
     throw std::runtime_error("Error message");
   }
 
-  ret[3] = raw.dt_left_voltage; // Definitely incorrect conversion
-  ret[2] = raw.dt_right_voltage; 
-  ret[1] = raw.arm_voltage;
+  ret[3] = (raw.dt_left_voltage + 12) * (254./24.); // Definitely incorrect conversion
+  ret[2] = (raw.dt_right_voltage + 12) * (254./24.); 
+  ret[1] = (raw.arm_voltage + 12) * (254./24.);
 
   ret[0] = 0; 
   ret[0] |= (raw.gripper_open << 2);
@@ -77,9 +77,9 @@ std::optional<Output> decode_output(const std::array<unsigned char, 4> &raw) {
     throw std::runtime_error("Error message");
   }
 
-  ret.dt_left_voltage = raw[3]; 
-  ret.dt_right_voltage = raw[2];
-  ret.arm_voltage = raw[1];
+  ret.dt_left_voltage = (raw[3] / (254./24.)) - 12; 
+  ret.dt_right_voltage = (raw[2] / (254./24.)) - 12;
+  ret.arm_voltage = (raw[1] / (254./24.)) - 12;
 
   ret.gripper_open = raw[0] & (1 << 2); 
   ret.roller_forward = raw[0] & (1 << 1);
