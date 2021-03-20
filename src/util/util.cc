@@ -95,13 +95,13 @@ std::array<unsigned char, 4> encode_sensors(const Sensors &sensors) {
   
   ret[3] = 0xAF;
 
-  int arm_pos = (sensors.arm_position / M_PI) * (1./4095.);
+  int arm_pos = (sensors.arm_position / M_PI) * (4096.);
   
   ret[2] = 0; 
-  ret[2] |= (arm_pos & 0xFF0) >> 4;
+  ret[2] |= arm_pos >> 4; 
 
-  ret[1] = 0; 
-  ret[1] |= (arm_pos & 0x00F) << 4;
+  ret[1] = 0;
+  ret[1] |= (arm_pos << 8) >> 8;
 
   ret[0] = 0;
   ret[0] |= (sensors.lower_limit_on << 1);
@@ -121,10 +121,10 @@ std::optional<Sensors> decode_sensors(const std::array<unsigned char, 4> &raw) {
   ret.upper_limit_on = raw[0] & (1 << 0); 
 
   int arm_pos = 0; 
-  arm_pos |= (ret[2] << 4) & 0x00F;
-  arm_pos |= (ret[2] >> 4) & 0xFF0;
+  arm_pos |= raw[2] << 4; 
+  arm_pos |= raw[1];
 
-  ret.arm_position = ((arm_pos + 0.0) * 4095.) * M_PI;
+  ret.arm_position = ((arm_pos + 0.0) / 4096.) * M_PI;
 
   return std::optional(ret);
 }
