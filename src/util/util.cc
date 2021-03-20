@@ -1,4 +1,5 @@
 #include "util.hh"
+#include <cmath>
 
 bool check_range(float value, float lower, float upper) {
   if (value < lower) {
@@ -58,7 +59,7 @@ std::array<unsigned char, 4> encode_output(const Output &raw) {
     throw std::runtime_error("Error message");
   }
 
-  ret[3] = (raw.dt_left_voltage + 12) * (254./24.); // Definitely incorrect conversion
+  ret[3] = (raw.dt_left_voltage + 12) * (254./24.);
   ret[2] = (raw.dt_right_voltage + 12) * (254./24.); 
   ret[1] = (raw.arm_voltage + 12) * (254./24.);
 
@@ -89,11 +90,41 @@ std::optional<Output> decode_output(const std::array<unsigned char, 4> &raw) {
 }
 
 std::array<unsigned char, 4> encode_sensors(const Sensors &sensors) {
-  std::array<unsigned char, 4> ret{};
+  std::array<unsigned char, 4> ret;
+
+  
+  ret[3] = 0xAF;
+
+  int arm_pos = (sensors.arm_position / M_PI) * (1./4095.);
+  
+  ret[2] = 0; 
+  ret[2] |= (arm_pos & 0xFF0) >> 4;
+
+  ret[1] = 0; 
+  ret[1] |= (arm_pos & 0x00F) << 4;
+
+  ret[0] = 0;
+  ret[0] |= (sensors.lower_limit_on << 1);
+  ret[0] |= (sensors.upper_limit_on); 
+
   return ret;
 }
 
 std::optional<Sensors> decode_sensors(const std::array<unsigned char, 4> &raw) {
   Sensors ret;
+
+  if (raw[3] != 0xAF) {
+    throw std::runtime_error("Error message");
+  }
+
+  ret.lower_limit_on = raw[0] & (1 << 1);
+  ret.upper_limit_on = raw[0] & (1 << 0); 
+
+  int arm_pos = 0; 
+  arm_pos |= (ret[2] << 4) & 0x00F;
+  arm_pos |= (ret[2] >> 4) & 0xFF0;
+
+  ret.arm_position = ((arm_pos + 0.0) * 4095.) * M_PI;
+
   return std::optional(ret);
 }
