@@ -56,7 +56,7 @@ std::array<unsigned char, 4> encode_output(const Output &raw) {
 
 
   if ((raw.roller_forward == 1) && (raw.roller_backwards == 1)) {
-    throw std::runtime_error("Error message");
+    throw std::runtime_error("Invalid roller inputs");
   }
 
   ret[3] = (raw.dt_left_voltage + 12) * (254./24.);
@@ -75,7 +75,7 @@ std::optional<Output> decode_output(const std::array<unsigned char, 4> &raw) {
   Output ret;
 
   if ((raw[0] & (1 << 1)) && (raw[0] & (1 << 0))) {
-    throw std::runtime_error("Error message");
+    throw std::nullopt; 
   }
 
   ret.dt_left_voltage = (raw[3] / (254./24.)) - 12; 
@@ -114,7 +114,7 @@ std::optional<Sensors> decode_sensors(const std::array<unsigned char, 4> &raw) {
   Sensors ret;
 
   if (raw[3] != 0xAF) {
-    throw std::runtime_error("Error message");
+    throw std::nullopt;
   }
 
   ret.lower_limit_on = raw[0] & (1 << 1);
